@@ -2,10 +2,13 @@
 //
 
 #include <iostream>
+#include "Server.h"
 
 int main()
 {
-    std::cout << "Hello World!\n";
+    Server server = Server();
+
+    server.updateServer();
 }
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu

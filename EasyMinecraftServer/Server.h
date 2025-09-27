@@ -8,7 +8,7 @@ class Server
 private:
 
 	string serverFolderPath;
-	bool serverRunning;
+	bool isServerRunning;
 	int playersOnline;
 	int serverVersion;
 
@@ -16,6 +16,8 @@ private:
 public:
 
 	Server();
+
+	Server(string);
 
 	void startServer();
 
