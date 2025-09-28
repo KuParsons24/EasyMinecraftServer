@@ -2,13 +2,33 @@
 //
 
 #include <iostream>
+#include <thread>
+#include <chrono>
 #include "Server.h"
 
 int main()
 {
     Server server = Server();
 
-    server.updateServer();
+    server.updateServer(true);
+
+    std::thread t2(&Server::startServer, &server);
+
+    //std::this_thread::sleep_for(std::chrono::seconds(20));
+    //system("/stop");
+
+    if (t2.joinable())
+    {
+        t2.join();
+    }
+
+    //while (!t2.joinable())
+    //{
+
+    //}
+
+    //t2.join();
+
 }
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu

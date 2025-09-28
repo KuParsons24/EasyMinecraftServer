@@ -5,6 +5,7 @@
 
 # Minecraft files
 server.jar
+test/
 
 # User-specific files
 *.rsuser
