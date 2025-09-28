@@ -8,11 +8,13 @@
 
 int main()
 {
-    Server server = Server();
+    Server* server = new Server();
 
-    server.updateServer(true);
+    server->updateServer(false);
 
-    std::thread t2(&Server::startServer, &server);
+    server->readEula();
+
+    std::thread t2(&Server::startServer, server);
 
     //std::this_thread::sleep_for(std::chrono::seconds(20));
     //system("/stop");

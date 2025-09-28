@@ -7,6 +7,8 @@
 #include <vector>
 #include <cstdio>
 #include <thread>
+#include <list>
+#include <algorithm>
 #include <curlpp/Easy.hpp>
 #include <curlpp/cURLpp.hpp>
 #include <curlpp/Options.hpp>
@@ -44,7 +46,7 @@ void Server::startServer()
 	filesystem::path currentDir = filesystem::current_path();
 	filesystem::current_path(this->serverFolderPath);
 
-	cout << filesystem::current_path() << endl;
+	//cout << filesystem::current_path() << endl;
 
 	HANDLE g_hChildStd_IN_Rd = NULL; // Child's STDIN read handle
 	HANDLE g_hChildStd_IN_Wr = NULL; // Child's STDIN write handle
@@ -113,8 +115,8 @@ void Server::startServer()
 	CloseHandle(g_hChildStd_IN_Rd);
 	CloseHandle(g_hChildStd_OUT_Wr);
 
-	cout << pi.hProcess << endl;
-	cout << pi.hThread << endl;
+	//cout << pi.hProcess << endl;
+	//cout << pi.hThread << endl;
 	
 	// Example: Write to child's STDIN
 	//std::string dataToSend = "Hello from parent!";
@@ -137,9 +139,9 @@ void Server::startServer()
 
 	filesystem::current_path(currentDir);
 
-	std::cout << filesystem::current_path() << endl;
+	//std::cout << filesystem::current_path() << endl;
 
-	std::cout << "Im still running!!!" << std::endl;
+	//std::cout << "Im still running!!!" << std::endl;
 
 	if (this->tMC.joinable())
 	{
@@ -168,8 +170,10 @@ void Server::updateServer(bool force = false)
 	// Find latest version number
 	std::string latestVersion = j["latest"]["release"];
 
-	// If server is not latest -> update
-	if (force)
+	cout << "Latest Version of MC Server is " + latestVersion << endl;
+
+	// If server is not latest -> update or If server.jar does not exist.
+	if (force || !filesystem::exists(this->serverFolderPath + "/server.jar"))
 	{
 		// Iterate to find the correct element containing the correct version manifest
 		for (json::iterator i = j["versions"].begin(); i != j["versions"].end(); ++i)
@@ -179,7 +183,7 @@ void Server::updateServer(bool force = false)
 			if (element["id"] == latestVersion)
 			{
 				//std::cout << element;
-				std::cout << element["url"] << std::endl;
+				//std::cout << element["url"] << std::endl;
 				// Set target url to the version manifest
 				myRequest.setOpt<curlpp::options::Url>(element["url"]);
 			}
@@ -195,7 +199,7 @@ void Server::updateServer(bool force = false)
 		j = json::parse(response.str());
 
 
-		std::cout << j["downloads"]["server"]["url"] << std::endl;
+		//std::cout << j["downloads"]["server"]["url"] << std::endl;
 
 		// Set target url to the server.jar file
 		myRequest.setOpt<curlpp::options::Url>(j["downloads"]["server"]["url"]);
@@ -211,9 +215,11 @@ void Server::updateServer(bool force = false)
 		std::ofstream serverFile(this->serverFolderPath + "/server.jar", std::ios::binary);
 		if (serverFile.is_open())
 		{
+			cout << "Downloading..." << endl;
 			curlpp::options::WriteStream ws(&serverFile);
 			myRequest.setOpt(ws);
 			myRequest.perform();
+			cout << "Done" << endl;
 		}
 		else
 		{
@@ -234,8 +240,80 @@ void Server::readServer(HANDLE &strOutRd)
 		ReadFile(strOutRd, buffer, sizeof(buffer) - 1, &bytesRead, NULL);
 		if (bytesRead > 0) {
 			buffer[bytesRead] = '\0';
-			std::cout << "Child output: " << buffer;
+			std::cout << buffer;
+		}
+	}
+}
+
+int Server::readEula()
+{
+	ifstream eulaIn(this->serverFolderPath + "/eula.txt");
+
+	bool writeToEula = false;
+
+	string line;
+	list<string> contents;
+
+	string searchString = "eula=false";
+
+	if (!eulaIn.is_open()) 
+	{
+		std::cerr << "Error opening eula!" << std::endl;
+		return 1;
+	}
+	else
+	{
+		while (getline(eulaIn, line))
+		{
+			contents.push_back(line);
+		}
+
+		eulaIn.close();
+
+		// Iterates through list and changes the correct value.
+		for (list<string>::iterator i = contents.begin(); i != contents.end(); ++i)
+		{
+			if (*i == searchString)
+			{
+				*i = "eula=true";
+				writeToEula = true;
+			}
+		}
+	}
+
+	if (writeToEula)
+	{
+		ofstream eulaOut(this->serverFolderPath + "/eula.txt");
+
+		if (!eulaOut.is_open())
+		{
+			std::cerr << "Error opening eula!" << std::endl;
+			return 1;
+		}
+		else 
+		{
+			// Iterates through list and changes the correct value.
+			for (list<string>::iterator i = contents.begin(); i != contents.end(); ++i)
+			{
+				eulaOut << *i << endl;
+			}
+
+			eulaOut.close();
 		}
 
 	}
+
+	return 0;
+
+	// Finds string in list.
+	//auto theOne = find(contents.begin(), contents.end(), searchString);
+
+	//if (theOne != contents.end())
+	//{
+	//	cout << *theOne << endl;
+	//}
+	//else
+	//{
+	//	cout << "not found" << endl;
+	//}
 }

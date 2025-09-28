@@ -31,5 +31,7 @@ public:
 
 	void readServer(HANDLE&);
 
+	int readEula();
+
 };
 
